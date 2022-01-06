@@ -79,9 +79,9 @@ check_dependencies() {
     command -v sed      >/dev/null 2>&1 || set -- sed "$@";
     command -v gpg      >/dev/null 2>&1 || set -- gpg "$@";
     if [ no = "$IS_WSL" ]; then
-        command -v build-essential >/dev/null 2>&1 || set -- build-essential "$@";
-        command -v shellcheck      >/dev/null 2>&1 || set -- shellcheck "$@";
-        command -v terminator      >/dev/null 2>&1 || set -- terminator "$@";
+        command -v gcc        >/dev/null 2>&1 || set -- build-essential "$@";
+        command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
+        command -v terminator >/dev/null 2>&1 || set -- terminator "$@";
     fi
 
     if [ $# -ne 0 ]; then
