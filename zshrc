@@ -99,13 +99,13 @@ plugins=(git sudo colorize)
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 # If running WSL
-if grep -q Microsoft /proc/version; then
+if grep -qi Microsoft /proc/version; then
     ## set colors for LS_COLORS
     eval $(dircolors ~/.dircolors)
 fi
 
 alias ip="ip -c"
-alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/'"
+alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1Â°C/'"
 
 neofetch
 
