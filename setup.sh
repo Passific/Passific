@@ -113,7 +113,7 @@ config_ohmyzsh() {
 
 config_wsl() {
     pprintf "Configure WSL..."
-    if grep -q Microsoft /proc/version; then
+    if [ yes = "$IS_WSL" ]; then
         if [ ! -f "$HOME/.dircolors" ]; then
             wget -qO "$HOME/.dircolors" https://raw.githubusercontent.com/seebi/dircolors-solarized/master/dircolors.ansi-dark ||·fail_and_exit
             chmod 644 "$HOME/.dircolors" && fixed_and_continue
