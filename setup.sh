@@ -6,7 +6,7 @@
 # shellcheck disable=SC2059
 
 readonly KERNELNAME=$(uname -s)
-if grep -q Microsoft /proc/version; then
+if grep -qi Microsoft /proc/version; then
     IS_WSL="yes"
 else
     IS_WSL="no"
