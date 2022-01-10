@@ -137,7 +137,7 @@ set_default_sh() {
 
 config_git_name() {
     pprintf "Configure Git config user.name..."
-    name="$(git config user.name)"
+    name="$(git config --global user.name)"
     printf "%s" "$name"
     if [ -z "$name" ]; then
         echo "Enter your first name:"
@@ -161,7 +161,7 @@ config_git_name() {
 }
 config_git_email() {
     pprintf "Configure Git config user.email..."
-    email="$(git config user.email)"
+    email="$(git config --global user.email)"
     printf "%s" "$email"
     if [ -z "$email" ]; then
         echo "Enter your email address:"
@@ -173,7 +173,7 @@ config_git_email() {
 }
 config_git_autocrlf() {
     pprintf "Configure Git config core.autocrlf..."
-    autocrlf="$(git config core.autocrlf)"
+    autocrlf="$(git config --global core.autocrlf)"
     printf "%s" "$autocrlf"
     if [ -z "$autocrlf" ]; then
         if [ "Linux" = "$KERNELNAME" ]; then
@@ -181,7 +181,7 @@ config_git_autocrlf() {
         else
             coreautocrlfval="false"
         fi
-        if [ "$(git config core.autocrlf)" != "$coreautocrlfval" ]; then
+        if [ "$(git config --global core.autocrlf)" != "$coreautocrlfval" ]; then
             printf "set to %s" "$coreautocrlfval"
             git config --global core.autocrlf "$coreautocrlfval" && fixed_and_continue
         else
@@ -193,7 +193,7 @@ config_git_autocrlf() {
 }
 config_git_hooksPath() {
     pprintf "Configure Git config core.hooksPath..."
-    hooksPath="$(git config core.hooksPath)"
+    hooksPath="$(git config --global core.hooksPath)"
     printf "%s" "$hooksPath"
     if [ ".githooks" != "$hooksPath" ]; then
         printf " swithed to .githooks"
@@ -232,7 +232,7 @@ setup_gpg() {
 }
 config_git_gpgsign() {
     pprintf "Configure Git config commit.gpgsign..."
-    if [ "true" != "$(git config commit.gpgsign)" ]; then
+    if [ "true" != "$(git config --global commit.gpgsign)" ]; then
         git config --global commit.gpgsign true && fixed_and_continue
     else
         ok_and_continue
@@ -256,8 +256,8 @@ printf "Environment configuration\n"
 update_system           || fail_and_exit
 check_dependencies      || fail_and_exit
 install_ohmyzsh         || fail_and_exit
-config_ohmyzsh          ||·fail_and_exit
-config_wsl              ||·fail_and_exit
+config_ohmyzsh          || fail_and_exit
+config_wsl              || fail_and_exit
 set_default_sh          || fail_and_exit
 config_git_name         || fail_and_exit
 config_git_email        || fail_and_exit
