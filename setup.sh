@@ -12,6 +12,12 @@ else
     IS_WSL="no"
 fi
 
+if command -v apt-get >/dev/null 2>&1; then
+    HAS_APT="yes"
+else
+    HAS_APT="false"
+fi
+
 setup_color() {
     # Only use colors if connected to a terminal
     if [ -t 1 ]; then
@@ -51,16 +57,20 @@ fail_and_exit() {
 }
 
 update_system() {
-    pprintf "Updating system..."
-    printf "update..."
-    sudo apt-get -qq update > /dev/null         || fail_and_exit
-    printf " upgrade..."
-    sudo apt-get -qq upgrade > /dev/null        || fail_and_exit
-    printf " dist-upgrade..."
-    sudo apt-get -qq dist-upgrade > /dev/null   || fail_and_exit
-    printf " autoremove..."
-    sudo apt-get -qq autoremove > /dev/null     || fail_and_exit
-    ok_and_continue
+    if [ yes = "$HAS_APT" ]; then
+        pprintf "Updating system..."
+        printf "update..."
+        sudo apt-get -qq update > /dev/null         || fail_and_exit
+        printf " upgrade..."
+        sudo apt-get -qq upgrade > /dev/null        || fail_and_exit
+        printf " dist-upgrade..."
+        sudo apt-get -qq dist-upgrade > /dev/null   || fail_and_exit
+        printf " autoremove..."
+        sudo apt-get -qq autoremove > /dev/null     || fail_and_exit
+        ok_and_continue
+    else
+        printf "${YELLOW}Please check your system is up to date.${RESET}\n"
+    fi
     if [ -f /var/run/reboot-required ]; then
         printf "\n${RED}REBOOT REQUIRED FOR:${RESET}\n"
         cat /var/run/reboot-required.pkgs
@@ -86,7 +96,12 @@ check_dependencies() {
 
     if [ $# -ne 0 ]; then
         printf "The following dependencies must be satisfied: %s\r" "$*"
-        sudo apt-get -qq install "$@" > /dev/null && fixed_and_continue
+        if [ yes = "$HAS_APT" ]; then
+            sudo apt-get -qq install "$@" > /dev/null && fixed_and_continue
+        else
+            printf "\n"
+            exit 1
+        fi
     else
         ok_and_continue
     fi
