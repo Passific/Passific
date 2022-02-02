@@ -43,6 +43,10 @@ setup_color() {
     fi
 }
 
+is_user_root() {
+    [ "$(id -u)" -eq 0 ];
+}
+
 pprintf() {
     # shellcheck disable=SC2059
     printf " * [ .... ] %s " "$(printf "$@")"
@@ -300,7 +304,7 @@ config_git_signingkey() {
 setup_color
 printf "Environment configuration\n"
 
-if [ "$(id -u)" -eq 0 ]; then
+if is_user_root; then
     printf "${YELLOW}Careful, this script is meant to be executed in user context, not root.${RESET}\n"
     printf "${YELLOW}Otherwise root account will be configured not yours.${RESET}\n"
     exit 1
