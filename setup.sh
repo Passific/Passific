@@ -18,6 +18,12 @@ else
     HAS_APT="false"
 fi
 
+if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+    IS_SSH="yes"
+else
+    IS_SSH="false"
+fi
+
 setup_color() {
     # Only use colors if connected to a terminal
     if [ -t 1 ]; then
@@ -55,6 +61,15 @@ fail_and_exit() {
     printf "\r * [${RED}FAILED${RESET}]\n"
     exit 1
 }
+do_install() {
+    printf "The following packages must be installed: %s\r" "$*"
+    if [ yes = "$HAS_APT" ]; then
+        sudo apt-get -qq install "$@" > /dev/null && fixed_and_continue
+    else
+        printf "\n"
+        exit 1
+    fi
+}
 
 update_system() {
     if [ yes = "$HAS_APT" ]; then
@@ -84,24 +99,41 @@ check_dependencies() {
     command -v wget     >/dev/null 2>&1 || set -- wget "$@";
     command -v zsh      >/dev/null 2>&1 || set -- zsh "$@";
     command -v neofetch >/dev/null 2>&1 || set -- neofetch "$@";
-    command -v tree     >/dev/null 2>&1 || set -- tree "$@";
     command -v tr       >/dev/null 2>&1 || set -- coreutils "$@";
+    command -v ps       >/dev/null 2>&1 || set -- procps "$@";
     command -v sed      >/dev/null 2>&1 || set -- sed "$@";
     command -v gpg      >/dev/null 2>&1 || set -- gpg "$@";
+
+    if [ $# -ne 0 ]; then
+        do_install "$@"
+    else
+        ok_and_continue
+    fi
+}
+
+install_packages() {
+    # Must be run after dependencies check
+    pprintf "Install packages..."
+
+    # If run with sudo, SSH_* variables may not be forwarded
+    if echo "$(ps -o comm= -p "$PPID" | tr '\n' ' ')" | grep -q sshd; then
+        IS_SSH="yes"
+    fi
+
+    command -v tree       >/dev/null 2>&1 || set -- tree "$@";
+    command -v nano       >/dev/null 2>&1 || set -- nano "$@";
+    command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
+
     if [ no = "$IS_WSL" ]; then
-        command -v gcc        >/dev/null 2>&1 || set -- build-essential "$@";
-        command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
-        command -v terminator >/dev/null 2>&1 || set -- terminator "$@";
+        command -v gcc >/dev/null 2>&1 || set -- build-essential "$@";
+
+        if [ no = "IS_SSH" ]; then
+            command -v terminator >/dev/null 2>&1 || set -- terminator "$@";
+        fi
     fi
 
     if [ $# -ne 0 ]; then
-        printf "The following dependencies must be satisfied: %s\r" "$*"
-        if [ yes = "$HAS_APT" ]; then
-            sudo apt-get -qq install "$@" > /dev/null && fixed_and_continue
-        else
-            printf "\n"
-            exit 1
-        fi
+        do_install "$@"
     else
         ok_and_continue
     fi
@@ -110,7 +142,7 @@ check_dependencies() {
 install_ohmyzsh() {
     pprintf "Install oh-my-zsh..."
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
-        sh -c "$(wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattende && fixed_and_continue
+        sh -c "$(wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && fixed_and_continue
     else
         ok_and_continue
     fi
@@ -121,6 +153,15 @@ config_ohmyzsh() {
     if [ ! -f "$HOME/.zshrc" ]; then
         cp zshrc "$HOME/.zshrc" ||·fail_and_exit
         chmod 644 "$HOME/.zshrc" && fixed_and_continue
+    else
+        ok_and_continue
+    fi
+}
+
+set_default_sh() {
+    pprintf "Set zsh as default... %s" "$SHELL"
+    if [ "$(which zsh)" != "$SHELL" ]; then
+        chsh -s "$(which zsh)" && fixed_and_continue
     else
         ok_and_continue
     fi
@@ -137,15 +178,6 @@ config_wsl() {
         fi
     else
         printf "WSL not detected"
-        ok_and_continue
-    fi
-}
-
-set_default_sh() {
-    pprintf "Set zsh as default... %s" "$SHELL"
-    if [ "$(which zsh)" != "$SHELL" ]; then
-        chsh -s "$(which zsh)" && fixed_and_continue
-    else
         ok_and_continue
     fi
 }
@@ -268,12 +300,19 @@ config_git_signingkey() {
 setup_color
 printf "Environment configuration\n"
 
+if [ "$(id -u)" -eq 0 ]; then
+    printf "${YELLOW}Careful, this script is meant to be executed in user context, not root.${RESET}\n"
+    printf "${YELLOW}Otherwise root account will be configured not yours.${RESET}\n"
+    exit 1
+fi
+
 update_system           || fail_and_exit
 check_dependencies      || fail_and_exit
+install_packages        || fail_and_exit
 install_ohmyzsh         || fail_and_exit
 config_ohmyzsh          || fail_and_exit
-config_wsl              || fail_and_exit
 set_default_sh          || fail_and_exit
+config_wsl              || fail_and_exit
 config_git_name         || fail_and_exit
 config_git_email        || fail_and_exit
 config_git_autocrlf     || fail_and_exit
