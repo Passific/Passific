@@ -120,7 +120,7 @@ install_packages() {
     pprintf "Install packages..."
 
     # If run with sudo, SSH_* variables may not be forwarded
-    if echo "$(ps -o comm= -p "$PPID" | tr '\n' ' ')" | grep -q sshd; then
+    if ps -o comm= -p "$PPID" | tr '\n' ' ' | grep -q sshd; then
         IS_SSH="yes"
     fi
 
@@ -131,7 +131,7 @@ install_packages() {
     if [ no = "$IS_WSL" ]; then
         command -v gcc >/dev/null 2>&1 || set -- build-essential "$@";
 
-        if [ no = "IS_SSH" ]; then
+        if [ no = "$IS_SSH" ]; then
             command -v terminator >/dev/null 2>&1 || set -- terminator "$@";
         fi
     fi
