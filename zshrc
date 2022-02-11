@@ -110,6 +110,16 @@ alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/
 neofetch
 
 if [ -f /var/run/reboot-required ]; then
-    printf "\n\033[31mREBOOT REQUIRED FOR:\033[0m\n"
-    cat /var/run/reboot-required.pkgs
+    printf "\n\033[91mREBOOT REQUIRED FOR:\033[0m\n"
+    if command -v apt-cache >/dev/null 2>&1; then
+        while IFS= read -r pkg; do
+            if apt-cache policy "$pkg" | grep -q "security"; then
+                printf "\033[31m[ SEC ]\033[0m %s\n" "$pkg"
+            else
+                printf "\t%s\n" "$pkg"
+            fi
+        done < /var/run/reboot-required.pkgs
+    else
+        cat /var/run/reboot-required.pkgs
+    fi
 fi
