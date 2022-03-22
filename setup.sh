@@ -233,11 +233,22 @@ config_git_autocrlf() {
             coreautocrlfval="false"
         fi
         if [ "$(git config --global core.autocrlf)" != "$coreautocrlfval" ]; then
-            printf "set to %s" "$coreautocrlfval"
+            printf " set to %s" "$coreautocrlfval"
             git config --global core.autocrlf "$coreautocrlfval" && fixed_and_continue
         else
             ok_and_continue
         fi
+    else
+        ok_and_continue
+    fi
+}
+config_git_pull() {
+    pprintf "Configure Git config pull.ff..."
+    pull="$(git config --global pull.ff)"
+    printf "%s" "$pull"
+    if [ -z "$pull" ]; then
+        printf " set to only"
+        git config --global pull.ff only && fixed_and_continue
     else
         ok_and_continue
     fi
@@ -320,6 +331,7 @@ config_wsl              || fail_and_exit
 config_git_name         || fail_and_exit
 config_git_email        || fail_and_exit
 config_git_autocrlf     || fail_and_exit
+config_git_pull         || fail_and_exit
 config_git_hooksPath    || fail_and_exit
 setup_gpg               || fail_and_exit
 config_git_gpgsign      || fail_and_exit
