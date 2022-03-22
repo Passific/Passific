@@ -253,6 +253,17 @@ config_git_pull() {
         ok_and_continue
     fi
 }
+config_git_credential() {
+    pprintf "Configure Git config credential.helper..."
+    credential="$(git config --global credential.helper)"
+    printf "%s" "$credential"
+    if [ -z "$credential" ]; then
+        printf " set to store --file ~/.git-credentials"
+        git config --global credential.helper 'store --file ~/.git-credentials' && fixed_and_continue
+    else
+        ok_and_continue
+    fi
+}
 config_git_hooksPath() {
     pprintf "Configure Git config core.hooksPath..."
     hooksPath="$(git config --global core.hooksPath)"
@@ -332,6 +343,7 @@ config_git_name         || fail_and_exit
 config_git_email        || fail_and_exit
 config_git_autocrlf     || fail_and_exit
 config_git_pull         || fail_and_exit
+config_git_credential   || fail_and_exit
 config_git_hooksPath    || fail_and_exit
 setup_gpg               || fail_and_exit
 config_git_gpgsign      || fail_and_exit
