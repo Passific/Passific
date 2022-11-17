@@ -127,6 +127,7 @@ install_packages() {
     command -v tree       >/dev/null 2>&1 || set -- tree "$@";
     command -v nano       >/dev/null 2>&1 || set -- nano "$@";
     command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
+    command -v valgrind   >/dev/null 2>&1 || set -- valgrind "$@";
 
     if [ no = "$IS_WSL" ]; then
         command -v gcc >/dev/null 2>&1 || set -- build-essential "$@";
