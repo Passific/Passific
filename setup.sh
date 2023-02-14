@@ -126,6 +126,9 @@ install_packages() {
 
     command -v tree       >/dev/null 2>&1 || set -- tree "$@";
     command -v nano       >/dev/null 2>&1 || set -- nano "$@";
+    command -v file       >/dev/null 2>&1 || set -- file "$@";
+    command -v curl       >/dev/null 2>&1 || set -- curl "$@";
+    command -v wget       >/dev/null 2>&1 || set -- wget "$@";
     command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
     command -v valgrind   >/dev/null 2>&1 || set -- valgrind "$@";
 
