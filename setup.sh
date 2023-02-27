@@ -129,11 +129,13 @@ install_packages() {
     command -v file       >/dev/null 2>&1 || set -- file "$@";
     command -v curl       >/dev/null 2>&1 || set -- curl "$@";
     command -v wget       >/dev/null 2>&1 || set -- wget "$@";
+    command -v dos2unix   >/dev/null 2>&1 || set -- dos2unix "$@";
     command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
-    command -v valgrind   >/dev/null 2>&1 || set -- valgrind "$@";
 
     if [ no = "$IS_WSL" ]; then
-        command -v gcc >/dev/null 2>&1 || set -- build-essential "$@";
+        command -v gcc      >/dev/null 2>&1 || set -- build-essential "$@";
+        command -v ninja    >/dev/null 2>&1 || set -- ninja-build "$@";
+        command -v valgrind >/dev/null 2>&1 || set -- valgrind "$@";
 
         if [ no = "$IS_SSH" ]; then
             command -v terminator >/dev/null 2>&1 || set -- terminator "$@";

@@ -30,7 +30,7 @@ ZSH_THEME="robbyrussell"
 # DISABLE_UPDATE_PROMPT="true"
 
 # Uncomment the following line to change how often to auto-update (in days).
-export UPDATE_ZSH_DAYS=13
+export UPDATE_ZSH_DAYS=7
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS=true
@@ -70,6 +70,25 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git sudo colorize)
 
+## Work proxy
+CIE_NAME="Passific Corp."
+if wget -q --spider --connect-timeout 2 --tries 1 --no-proxy --no-cache --no-hsts api.passific.fr/ifconfig/; then
+    printf "        Welcome \033[33mhome\033[0m\n"
+    unset http_proxy
+    unset https_proxy
+    unset no_proxy
+    TEMP_SED=$(sed -e '/proxy/ s/^#*/#/' "$HOME"/.gitconfig)
+    echo "$TEMP_SED" > "$HOME"/.gitconfig
+else
+    printf "    Welcome to \033[42m%s\033[0m site\n" "${CIE_NAME}"
+# TO BE FILLED with company proxies
+#    export http_proxy=""
+#    export https_proxy=""
+#    export no_proxy=""
+    TEMP_SED=$(sed -e '/proxy/ s/#//' "$HOME"/.gitconfig)
+    echo "$TEMP_SED" > "$HOME"/.gitconfig
+fi
+
 . "$ZSH/oh-my-zsh.sh"
 
 # User configuration
@@ -100,14 +119,14 @@ plugins=(git sudo colorize)
 
 # If running WSL
 if grep -qi Microsoft /proc/version; then
-    ## set colors for LS_COLORS
-    eval $(dircolors ~/.dircolors)
+    # WSL's specifc calls
+    ;
 fi
 
 alias ip="ip -c"
 alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/'"
 
-neofetch
+neofetch --cpu_temp on
 
 if [ -f /var/run/reboot-required ]; then
     printf "\n\033[91mREBOOT REQUIRED FOR:\033[0m\n"
