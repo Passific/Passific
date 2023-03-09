@@ -120,7 +120,7 @@ fi
 # If running WSL
 if grep -qi Microsoft /proc/version; then
     # WSL's specifc calls
-    ;
+    :
 fi
 
 alias ip="ip -c"

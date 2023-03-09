@@ -15,13 +15,13 @@ fi
 if command -v apt-get >/dev/null 2>&1; then
     HAS_APT="yes"
 else
-    HAS_APT="false"
+    HAS_APT="no"
 fi
 
 if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
     IS_SSH="yes"
 else
-    IS_SSH="false"
+    IS_SSH="no"
 fi
 
 setup_color() {
@@ -68,10 +68,46 @@ fail_and_exit() {
 do_install() {
     printf "The following packages must be installed: %s\r" "$*"
     if [ yes = "$HAS_APT" ]; then
-        sudo apt-get -qq install "$@" > /dev/null && fixed_and_continue
+        sudo apt-get -qq install "$@" > /dev/null || fail_and_exit
+        fixed_and_continue
     else
         printf "\n"
         exit 1
+    fi
+}
+
+check_proxy() {
+    pprintf "Checking proxy settings..."
+    USE_PROXY="no"
+    if [ -z ${http_proxy+x} ]; then
+        printf "\n${YELLOW}Please provide with proxy configuration${RESET}\n"
+        printf "    HTTP proxy: ";  read -r http_proxy
+        printf "    HTTPS proxy: "; read -r https_proxy
+        printf "    no proxy: ";    read -r no_proxy
+
+        if [ ! -z "${http_proxy}" ] || [ ! -z "${https_proxy}" ]; then
+            USE_PROXY="true"
+            export http_proxy
+            export https_proxy
+            export no_proxy
+            readonly aptConfig="/etc/apt/apt.conf.d/99mysettings"
+
+            if [ yes = "$HAS_APT" ] && [ ! -f "${aptConfig}" ]; then
+                pprintf "Applying proxy config to APT..."
+                echo "Acquire::http::Proxy \"${http_proxy}\";" > tmpAptConfig          || fail_and_exit
+                echo "Acquire::https::Proxy \"${https_proxy}\";" >> tmpAptConfig       || fail_and_exit
+                sudo install -o "$USER" -g "$USER" -m 644 tmpAptConfig "${aptConfig}"  || fail_and_exit
+                fixed_and_continue
+            else
+                ok_and_continue
+            fi
+        else
+            pprintf "Not using proxy"
+            ok_and_continue
+        fi
+    else
+        printf " already set to ${http_proxy}"
+        ok_and_continue
     fi
 }
 
@@ -152,7 +188,8 @@ install_packages() {
 install_ohmyzsh() {
     pprintf "Install oh-my-zsh..."
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
-        sh -c "$(wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && fixed_and_continue
+        sh -c "$(wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -161,8 +198,8 @@ install_ohmyzsh() {
 config_ohmyzsh() {
     pprintf "Configure oh-my-zsh..."
     if [ ! -f "$HOME/.zshrc" ]; then
-        cp zshrc "$HOME/.zshrc" ||·fail_and_exit
-        chmod 644 "$HOME/.zshrc" && fixed_and_continue
+        install -m 644 zshrc "$HOME/.zshrc"  || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -170,8 +207,9 @@ config_ohmyzsh() {
 
 set_default_sh() {
     pprintf "Set zsh as default... %s" "$SHELL"
-    if [ "$(which zsh)" != "$SHELL" ]; then
-        chsh -s "$(which zsh)" && fixed_and_continue
+    if [ "$(command -v zsh)" != "$SHELL" ]; then
+        chsh -s "$(command -v zsh)" || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -181,8 +219,9 @@ config_wsl() {
     pprintf "Configure WSL..."
     if [ yes = "$IS_WSL" ]; then
         if [ ! -f "$HOME/.dircolors" ]; then
-            wget -qO "$HOME/.dircolors" https://raw.githubusercontent.com/seebi/dircolors-solarized/master/dircolors.ansi-dark ||·fail_and_exit
-            chmod 644 "$HOME/.dircolors" && fixed_and_continue
+            wget -qO "$HOME/.dircolors" https://raw.githubusercontent.com/seebi/dircolors-solarized/master/dircolors.ansi-dark || fail_and_exit
+            chmod 644 "$HOME/.dircolors" || fail_and_exit
+            fixed_and_continue
         else
             ok_and_continue
         fi
@@ -211,7 +250,8 @@ config_git_name() {
         firstname=$(echo "$firstname" | sed 's/\(.\)/\U\1/')
         #convert in upper case the last name
         lastname=$(echo "$lastname" | tr "[:lower:]" "[:upper:]";)
-        git config --global user.name "$firstname $lastname" && fixed_and_continue
+        git config --global user.name "$firstname $lastname" || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -223,7 +263,8 @@ config_git_email() {
     if [ -z "$email" ]; then
         echo "Enter your email address:"
         read -r useremail
-        git config --global user.email "$useremail" && fixed_and_continue
+        git config --global user.email "$useremail" || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -240,7 +281,8 @@ config_git_autocrlf() {
         fi
         if [ "$(git config --global core.autocrlf)" != "$coreautocrlfval" ]; then
             printf " set to %s" "$coreautocrlfval"
-            git config --global core.autocrlf "$coreautocrlfval" && fixed_and_continue
+            git config --global core.autocrlf "$coreautocrlfval" || fail_and_exit
+            fixed_and_continue
         else
             ok_and_continue
         fi
@@ -254,7 +296,8 @@ config_git_pull() {
     printf "%s" "$pull"
     if [ -z "$pull" ]; then
         printf " set to only"
-        git config --global pull.ff only && fixed_and_continue
+        git config --global pull.ff only || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -265,7 +308,8 @@ config_git_credential() {
     printf "%s" "$credential"
     if [ -z "$credential" ]; then
         printf " set to store --file ~/.git-credentials"
-        git config --global credential.helper 'store --file ~/.git-credentials' && fixed_and_continue
+        git config --global credential.helper 'store --file ~/.git-credentials' || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -276,7 +320,8 @@ config_git_hooksPath() {
     printf "%s" "$hooksPath"
     if [ ".githooks" != "$hooksPath" ]; then
         printf " swithed to .githooks"
-        git config --global core.hooksPath .githooks && fixed_and_continue
+        git config --global core.hooksPath .githooks || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -312,7 +357,8 @@ setup_gpg() {
 config_git_gpgsign() {
     pprintf "Configure Git config commit.gpgsign..."
     if [ "true" != "$(git config --global commit.gpgsign)" ]; then
-        git config --global commit.gpgsign true && fixed_and_continue
+        git config --global commit.gpgsign true || fail_and_exit
+        fixed_and_continue
     else
         ok_and_continue
     fi
@@ -323,7 +369,22 @@ config_git_signingkey() {
     email=$(git config --global user.email)
     key=$(gpg --list-secret-keys --keyid-format LONG "$email" | head -n1 | xargs | cut -d' ' -f2 | cut -d '/' -f2)
     if [ -z "$signingkey" ] || [ "$signingkey" != "$key" ]; then
-        git config --global user.signingkey "$key" && fixed_and_continue
+        git config --global user.signingkey "$key" || fail_and_exit
+        fixed_and_continue
+    else
+        ok_and_continue
+    fi
+}
+config_git_proxy() {
+    pprintf "Configure Git config http.proxy..."
+    if [ yes = "$USE_PROXY" ]; then
+        if [ "true" != "$(git config --global http.proxy)" ]; then
+            git config --global http.proxy "${http_proxy}"   || fail_and_exit
+            git config --global https.proxy "${https_proxy}" || fail_and_exit
+            fixed_and_continue
+        else
+            ok_and_continue
+        fi
     else
         ok_and_continue
     fi
@@ -338,6 +399,7 @@ if is_user_root; then
     exit 1
 fi
 
+check_proxy             || fail_and_exit
 update_system           || fail_and_exit
 check_dependencies      || fail_and_exit
 install_packages        || fail_and_exit
@@ -351,6 +413,7 @@ config_git_autocrlf     || fail_and_exit
 config_git_pull         || fail_and_exit
 config_git_credential   || fail_and_exit
 config_git_hooksPath    || fail_and_exit
+config_git_proxy        || fail_and_exit
 setup_gpg               || fail_and_exit
 config_git_gpgsign      || fail_and_exit
 config_git_signingkey   || fail_and_exit
