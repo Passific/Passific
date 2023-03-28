@@ -5,6 +5,12 @@
 # @brief   Environment configuration
 # shellcheck disable=SC2059
 
+if [ -t 1 ]; then
+    IS_INTERACTIVE="yes"
+else
+    IS_INTERACTIVE="no"
+fi
+
 readonly KERNELNAME=$(uname -s)
 if grep -qi Microsoft /proc/version; then
     IS_WSL="yes"
@@ -24,9 +30,11 @@ else
     IS_SSH="no"
 fi
 
+USE_PROXY="no"
+
 setup_color() {
     # Only use colors if connected to a terminal
-    if [ -t 1 ]; then
+    if [ yes = "${IS_INTERACTIVE}" ]; then
         RED=$(printf '\033[31m')
         GREEN=$(printf '\033[32m')
         YELLOW=$(printf '\033[33m')
@@ -76,37 +84,57 @@ do_install() {
     fi
 }
 
+check_parameters() {
+    usage="Usage:
+$0 <firstname> <lastname> <email> [<http_proxy> [<https_proxy> [<no_proxy>]]]
+"
+    if [ yes = "${IS_INTERACTIVE}" ]; then
+#    if [ no = "${IS_INTERACTIVE}" ]; then
+        missing="Error! Parameter missing... ${usage}"
+        export firstname=${1:?${missing}}
+        export lastname=${2:?${missing}}
+        export useremail=${3:?${missing}}
+        export http_proxy=${4:+${missing}}
+        export https_proxy=${5:+${missing}}
+        export no_proxy=${6:+${missing}}
+    fi
+    if [ "$#" -gt 6 ]; then
+        echo "Too many arguments..."
+        echo "${usage}"
+        fail_and_exit
+    fi
+    exit 0
+}
+
 check_proxy() {
     pprintf "Checking proxy settings..."
-    USE_PROXY="no"
-    if [ -z ${http_proxy+x} ]; then
+    if [ -z ${http_proxy+x} ] && [ yes = "${IS_INTERACTIVE}" ]; then
         printf "\n${YELLOW}Please provide with proxy configuration${RESET}\n"
         printf "    HTTP proxy: ";  read -r http_proxy
         printf "    HTTPS proxy: "; read -r https_proxy
         printf "    no proxy: ";    read -r no_proxy
 
-        if [ ! -z "${http_proxy}" ] || [ ! -z "${https_proxy}" ]; then
-            USE_PROXY="true"
+        if [ -n "${http_proxy}" ] || [ -n "${https_proxy}" ]; then
             export http_proxy
             export https_proxy
             export no_proxy
-            readonly aptConfig="/etc/apt/apt.conf.d/99mysettings"
+        fi
+    fi
+    if [ -n "${http_proxy}" ] || [ -n "${https_proxy}" ]; then
+        USE_PROXY="yes"
+        readonly aptConfig="/etc/apt/apt.conf.d/99mysettings"
 
-            if [ yes = "$HAS_APT" ] && [ ! -f "${aptConfig}" ]; then
-                pprintf "Applying proxy config to APT..."
-                echo "Acquire::http::Proxy \"${http_proxy}\";" > tmpAptConfig          || fail_and_exit
-                echo "Acquire::https::Proxy \"${https_proxy}\";" >> tmpAptConfig       || fail_and_exit
-                sudo install -o "$USER" -g "$USER" -m 644 tmpAptConfig "${aptConfig}"  || fail_and_exit
-                fixed_and_continue
-            else
-                ok_and_continue
-            fi
+        if [ yes = "$HAS_APT" ] && [ ! -f "${aptConfig}" ]; then
+            pprintf "Applying proxy config to APT..."
+            echo "Acquire::http::Proxy \"${http_proxy}\";" > tmpAptConfig          || fail_and_exit
+            echo "Acquire::https::Proxy \"${https_proxy}\";" >> tmpAptConfig       || fail_and_exit
+            sudo install -o "$USER" -g "$USER" -m 644 tmpAptConfig "${aptConfig}"  || fail_and_exit
+            fixed_and_continue
         else
-            pprintf "Not using proxy"
             ok_and_continue
         fi
     else
-        printf " already set to ${http_proxy}"
+        pprintf "Not using proxy"
         ok_and_continue
     fi
 }
@@ -236,10 +264,20 @@ config_git_name() {
     name="$(git config --global user.name)"
     printf "%s" "$name"
     if [ -z "$name" ]; then
-        echo "Enter your first name:"
-        read -r firstname
-        echo "Enter your last name:"
-        read -r lastname
+        if [ yes = "${IS_INTERACTIVE}" ]; then
+            echo "Enter your first name:"
+            read -r firstname
+            echo "Enter your last name:"
+            read -r lastname
+        fi
+        if [ -z "$firstname" ]; then
+            echo "Firstname cannot be empty..."
+            fail_and_exit
+        fi
+        if [ -z "$lastname"  ]; then
+            echo "Lastname cannot be empty..."
+            fail_and_exit
+        fi
         #convert to lower case the first name
         firstname=$(echo "$firstname" | tr "[:upper:]" "[:lower:]";)
         #convert the first letter in upper case
@@ -261,8 +299,14 @@ config_git_email() {
     email="$(git config --global user.email)"
     printf "%s" "$email"
     if [ -z "$email" ]; then
-        echo "Enter your email address:"
-        read -r useremail
+        if [ yes = "${IS_INTERACTIVE}" ]; then
+            echo "Enter your email address:"
+            read -r useremail
+        fi
+        if [ -z "$useremail" ]; then
+            echo "Email cannot be empty..."
+            fail_and_exit
+        fi
         git config --global user.email "$useremail" || fail_and_exit
         fixed_and_continue
     else
@@ -348,7 +392,11 @@ setup_gpg() {
         fixed_and_continue
         printf "${YELLOW}Copy the following key into your DevOps platforms${RESET}\n\n"
         gpg --armor --export "$key"
-        exit 1
+        if [ yes = "${IS_INTERACTIVE}" ]; then
+            # User should import the key into his system before continuing
+            #TODO: wait for input instead of exit?
+            exit 1
+        fi
     else
         printf "%s" "$(gpg --list-secret-keys --keyid-format LONG "$email" | sed -n '2p' | xargs)"
         ok_and_continue
@@ -399,6 +447,7 @@ if is_user_root; then
     exit 1
 fi
 
+check_parameters "$@"   || fail_and_exit
 check_proxy             || fail_and_exit
 update_system           || fail_and_exit
 check_dependencies      || fail_and_exit
