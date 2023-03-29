@@ -88,8 +88,7 @@ check_parameters() {
     usage="Usage:
 $0 <firstname> <lastname> <email> [<http_proxy> [<https_proxy> [<no_proxy>]]]
 "
-    if [ yes = "${IS_INTERACTIVE}" ]; then
-#    if [ no = "${IS_INTERACTIVE}" ]; then
+    if [ no = "${IS_INTERACTIVE}" ]; then
         missing="Error! Parameter missing... ${usage}"
         export firstname=${1:?${missing}}
         export lastname=${2:?${missing}}
