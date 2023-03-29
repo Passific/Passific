@@ -225,7 +225,13 @@ install_ohmyzsh() {
 config_ohmyzsh() {
     pprintf "Configure oh-my-zsh..."
     if [ ! -f "$HOME/.zshrc" ]; then
-        install -m 644 zshrc "$HOME/.zshrc"  || fail_and_exit
+        if [ ! -f "zshrc" ]; then
+            # zshrc is not alongside, so retreive it
+            wget -qO "$HOME/.zshrc" https://raw.githubusercontent.com/Passific/Passific/main/zshrc || fail_and_exit
+            chmod 644 "$HOME/.zshrc" || fail_and_exit
+        else
+            install -m 644 zshrc "$HOME/.zshrc" || fail_and_exit
+        fi
         fixed_and_continue
     else
         ok_and_continue
