@@ -193,6 +193,7 @@ install_packages() {
     command -v curl       >/dev/null 2>&1 || set -- curl "$@";
     command -v wget       >/dev/null 2>&1 || set -- wget "$@";
     command -v dos2unix   >/dev/null 2>&1 || set -- dos2unix "$@";
+    command -v column     >/dev/null 2>&1 || set -- bsdmainutils "$@";
     command -v shellcheck >/dev/null 2>&1 || set -- shellcheck "$@";
 
     if [ no = "$IS_WSL" ]; then
