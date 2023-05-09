@@ -117,11 +117,44 @@ fi
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-# If running WSL
-if grep -qi Microsoft /proc/version; then
-    # WSL's specifc calls
-    :
+confirm() {
+    while true; do
+        read -q -r "yn?$1 "
+        case $yn in
+            y ) echo "";return 0;;
+            n ) echo "";return 1;;
+        esac
+    done
+}
+
+# Save git bin location if not already done
+if [ -z "${gitbin}" ]; then
+    gitbin="$(which git)"
 fi
+# Overload git commandd to ease pushing new branches
+git() {
+    case "$1" in
+        push)
+            if [ -z "$2" ]; then
+                BRANCH="$("${gitbin}" rev-parse --abbrev-ref HEAD)"
+                if ! "${gitbin}" ls-remote --heads origin "${BRANCH}" | grep -q "${BRANCH}"; then
+                    if confirm "Do you want to create the new branch on the server?"; then
+                        "${gitbin}" push --set-upstream origin "${BRANCH}"
+                    else
+                        return 1
+                    fi
+                else
+                    "${gitbin}" "$@"
+                fi
+            else
+                "${gitbin}" "$@"
+            fi
+            ;;
+        *)
+            "${gitbin}" "$@"
+            ;;
+    esac
+}
 
 alias ip="ip -c"
 alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/'"
