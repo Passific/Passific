@@ -125,9 +125,11 @@ check_proxy() {
 
         if [ yes = "$HAS_APT" ] && [ ! -f "${aptConfig}" ]; then
             pprintf "Applying proxy config to APT..."
-            echo "Acquire::http::Proxy \"${http_proxy}\";" > tmpAptConfig          || fail_and_exit
-            echo "Acquire::https::Proxy \"${https_proxy}\";" >> tmpAptConfig       || fail_and_exit
-            sudo install -o "$USER" -g "$USER" -m 644 tmpAptConfig "${aptConfig}"  || fail_and_exit
+            readonly tmpAptConfig="/tmp/99mysettings"
+            echo "Acquire::http::Proxy \"${http_proxy}\";" > "${tmpAptConfig}"          || fail_and_exit
+            echo "Acquire::https::Proxy \"${https_proxy}\";" >> "${tmpAptConfig}"       || fail_and_exit
+            sudo install -o "$USER" -g "$USER" -m 644 "${tmpAptConfig}" "${aptConfig}"  || fail_and_exit
+            rm "${tmpAptConfig}"
             fixed_and_continue
         else
             ok_and_continue
@@ -381,6 +383,7 @@ setup_gpg() {
     email=$(git config --global user.email)
     if [ -z "$(gpg --list-secret-keys --keyid-format LONG "$email" 2>/dev/null)" ]; then
         name=$(git config --global user.name)
+        readonly tmpGpgFile="/tmp/gpg-file"
         {
             echo "%no-protection"
             echo "%echo Generating a basic OpenPGP key"
@@ -391,9 +394,9 @@ setup_gpg() {
             echo "Expire-Date: 0"
             echo "%commit"
             echo "%echo done"
-        } > /tmp/gpg-file || fail_and_exit
-        gpg --batch --full-generate-key /tmp/gpg-file || fail_and_exit
-        rm /tmp/gpg-file
+        } > "${tmpGpgFile}" || fail_and_exit
+        gpg --batch --full-generate-key "${tmpGpgFile}" || fail_and_exit
+        rm "${tmpGpgFile}"
         key=$(gpg --list-secret-keys --keyid-format LONG "$email" | head -n1 | xargs | cut -d' ' -f2 | cut -d '/' -f2)
         fixed_and_continue
         printf "${YELLOW}Copy the following key into your DevOps platforms${RESET}\n\n"
