@@ -227,13 +227,41 @@ install_ohmyzsh() {
 
 config_ohmyzsh() {
     pprintf "Configure oh-my-zsh..."
-    if [ ! -f "$HOME/.zshrc" ]; then
+    readonly zshrcFile="$HOME/.zshrc"
+    if [ ! -f "${zshrcFile}" ]; then
         if [ ! -f "zshrc" ]; then
             # zshrc is not alongside, so retreive it
-            wget -qO "$HOME/.zshrc" https://raw.githubusercontent.com/Passific/Passific/main/zshrc || fail_and_exit
-            chmod 644 "$HOME/.zshrc" || fail_and_exit
+            wget -qO "${zshrcFile}" https://raw.githubusercontent.com/Passific/Passific/main/zshrc || fail_and_exit
+            chmod 644 "${zshrcFile}" || fail_and_exit
         else
-            install -m 644 zshrc "$HOME/.zshrc" || fail_and_exit
+            install -m 644 zshrc "${zshrcFile}" || fail_and_exit
+        fi
+        if [ yes = "$USE_PROXY" ]; then
+            # Add proxies handling to .zshrc
+            cat << EOF | sed -i '/^#{PROXY}$/ {
+    r /dev/stdin
+    d
+    }' "${zshrcFile}"
+## Work proxy
+CIE_NAME="Passific Corp."
+if wget -q --spider --connect-timeout 2 --tries 1 --no-proxy --no-cache --no-hsts api.passific.fr/ifconfig/; then
+    printf "        Welcome \033[33mhome\033[0m\n"
+    unset http_proxy
+    unset https_proxy
+    unset no_proxy
+    TEMP_SED=\$(sed -e '/proxy/ s/^#*/#/' "\$HOME"/.gitconfig)
+    echo "\$TEMP_SED" > "\$HOME"/.gitconfig
+else
+    printf "    Welcome to \033[42m%s\033[0m site\n" "\${CIE_NAME}"
+    export http_proxy="${http_proxy}"
+    export https_proxy="${https_proxy}"
+    export no_proxy="${no_proxy}"
+    TEMP_SED=\$(sed -e '/proxy/ s/#//' "\$HOME"/.gitconfig)
+    echo "\$TEMP_SED" > "\$HOME"/.gitconfig
+fi
+EOF
+        else
+            sed -i 's/^#{PROXY}$//' "${zshrcFile}"
         fi
         fixed_and_continue
     else
@@ -435,7 +463,7 @@ config_git_signingkey() {
 config_git_proxy() {
     pprintf "Configure Git config http.proxy..."
     if [ yes = "$USE_PROXY" ]; then
-        if [ "true" != "$(git config --global http.proxy)" ]; then
+        if [ "${http_proxy}" != "$(git config --global http.proxy)" ] || [ "${https_proxy}" != "$(git config --global https.proxy)" ]; then
             git config --global http.proxy "${http_proxy}"   || fail_and_exit
             git config --global https.proxy "${https_proxy}" || fail_and_exit
             fixed_and_continue

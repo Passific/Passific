@@ -70,24 +70,7 @@ DISABLE_UNTRACKED_FILES_DIRTY="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git sudo colorize)
 
-## Work proxy
-CIE_NAME="Passific Corp."
-if wget -q --spider --connect-timeout 2 --tries 1 --no-proxy --no-cache --no-hsts api.passific.fr/ifconfig/; then
-    printf "        Welcome \033[33mhome\033[0m\n"
-    unset http_proxy
-    unset https_proxy
-    unset no_proxy
-    TEMP_SED=$(sed -e '/proxy/ s/^#*/#/' "$HOME"/.gitconfig)
-    echo "$TEMP_SED" > "$HOME"/.gitconfig
-else
-    printf "    Welcome to \033[42m%s\033[0m site\n" "${CIE_NAME}"
-# TO BE FILLED with company proxies
-#    export http_proxy=""
-#    export https_proxy=""
-#    export no_proxy=""
-    TEMP_SED=$(sed -e '/proxy/ s/#//' "$HOME"/.gitconfig)
-    echo "$TEMP_SED" > "$HOME"/.gitconfig
-fi
+#{PROXY}
 
 . "$ZSH/oh-my-zsh.sh"
 
@@ -119,7 +102,7 @@ fi
 
 confirm() {
     while true; do
-        read -q -r "yn?$1 "
+        read -q -r "yn?$1 (y/N) "
         case $yn in
             y ) echo "";return 0;;
             n ) echo "";return 1;;
