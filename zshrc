@@ -118,14 +118,24 @@ fi
 git() {
     case "$1" in
         push)
+            # only git push with no other parameter are handled
             if [ -z "$2" ]; then
                 BRANCH="$("${gitbin}" rev-parse --abbrev-ref HEAD)"
-                if ! "${gitbin}" ls-remote --heads origin "${BRANCH}" | grep -q "${BRANCH}"; then
-                    if confirm "Do you want to create the new branch on the server?"; then
+                "${gitbin}" ls-remote --exit-code --heads origin ${BRANCH} > /dev/null
+                branchStatus=$?
+                # no matching refs are found in the remote repository
+                if [ ${branchStatus} -eq 2 ] ; then
+                    if confirm "Do you want to create new branch on the server?"; then
                         "${gitbin}" push --set-upstream origin "${BRANCH}"
                     else
                         return 1
                     fi
+                # other error (timeout?)
+                elif [ ${branchStatus} -ne 0 ] ; then
+                    if confirm "Server not responding, try anyway?"; then
+                        "${gitbin}" "$@"
+                    fi
+                # branch found on the remote repository
                 else
                     "${gitbin}" "$@"
                 fi
