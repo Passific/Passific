@@ -31,6 +31,7 @@ else
 fi
 
 USE_PROXY="no"
+OMZ_FRESH="no"
 
 setup_color() {
     # Only use colors if connected to a terminal
@@ -218,6 +219,7 @@ install_ohmyzsh() {
     pprintf "Install oh-my-zsh..."
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
         sh -c "$(wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || fail_and_exit
+        OMZ_FRESH="yes"
         fixed_and_continue
     else
         ok_and_continue
@@ -227,7 +229,7 @@ install_ohmyzsh() {
 config_ohmyzsh() {
     pprintf "Configure oh-my-zsh..."
     readonly zshrcFile="$HOME/.zshrc"
-    if [ ! -f "${zshrcFile}" ]; then
+    if [ ! -f "${zshrcFile}" ] || [ yes = "$OMZ_FRESH" ]; then
         if [ ! -f "zshrc" ]; then
             # zshrc is not alongside, so retreive it
             wget -qO "${zshrcFile}" https://raw.githubusercontent.com/Passific/Passific/main/zshrc || fail_and_exit
@@ -430,8 +432,9 @@ setup_gpg() {
         gpg --armor --export "$key"
         if [ yes = "${IS_INTERACTIVE}" ]; then
             # User should import the key into his system before continuing
-            #TODO: wait for input instead of exit?
-            exit 1
+            echo "Press ENTER to continue..."
+            read -r REPLY
+            fixed_and_continue
         fi
     else
         printf "%s" "$(gpg --list-secret-keys --keyid-format LONG "$email" | sed -n '2p' | xargs)"
