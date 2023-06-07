@@ -102,7 +102,6 @@ $0 <firstname> <lastname> <email> [<http_proxy> [<https_proxy> [<no_proxy>]]]
         echo "${usage}"
         fail_and_exit
     fi
-    exit 0
 }
 
 check_proxy() {
