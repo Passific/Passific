@@ -11,7 +11,8 @@ else
     IS_INTERACTIVE="no"
 fi
 
-readonly KERNELNAME=$(uname -s)
+KERNELNAME="$(uname -s)"
+readonly KERNELNAME
 if grep -qi Microsoft /proc/version; then
     IS_WSL="yes"
 else
@@ -91,9 +92,9 @@ $0 <firstname> <lastname> <email> [<http_proxy> [<https_proxy> [<no_proxy>]]]
 "
     if [ no = "${IS_INTERACTIVE}" ]; then
         missing="Error! Parameter missing... ${usage}"
-        export firstname=${1:?${missing}}
-        export lastname=${2:?${missing}}
-        export useremail=${3:?${missing}}
+        export firstname="${1:?${missing}}"
+        export lastname="${2:?${missing}}"
+        export useremail="${3:?${missing}}"
         export http_proxy=${4:+${missing}}
         export https_proxy=${5:+${missing}}
         export no_proxy=${6:+${missing}}
