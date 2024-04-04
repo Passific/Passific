@@ -408,6 +408,18 @@ config_git_hooksPath() {
         ok_and_continue
     fi
 }
+config_git_rerere() {
+    pprintf "Configure Git config rerere.enabled..."
+    rerere="$(git config --global rerere.enabled)"
+    printf "%s" "$rerere"
+    if [ "true" != "$rerere" ]; then
+        printf " swithed to true"
+        git config --global rerere.enabled true || fail_and_exit
+        fixed_and_continue
+    else
+        ok_and_continue
+    fi
+}
 setup_gpg() {
     pprintf "Setup GPG keys..."
     email=$(git config --global user.email)
@@ -503,6 +515,7 @@ config_git_pull         || fail_and_exit
 config_git_credential   || fail_and_exit
 config_git_hooksPath    || fail_and_exit
 config_git_proxy        || fail_and_exit
+config_git_rerere       || fail_and_exit
 setup_gpg               || fail_and_exit
 config_git_gpgsign      || fail_and_exit
 config_git_signingkey   || fail_and_exit
