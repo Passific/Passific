@@ -29,7 +29,9 @@ ZSH_THEME="robbyrussell"
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-zstyle ':omz:update' frequency 7
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' verbose silent
+zstyle ':omz:update' frequency 13
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS=true
@@ -143,6 +145,12 @@ git() {
                 fi
             else
                 "${gitbin}" "$@"
+            fi
+            ;;
+        commit)
+            "${gitbin}" "$@"
+            if confirm "Would you like to push now?"; then
+                git push
             fi
             ;;
         *)
