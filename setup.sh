@@ -165,14 +165,14 @@ update_system() {
 
 check_dependencies() {
     pprintf "Check dependencies..."
-    command -v git      >/dev/null 2>&1 || set -- git "$@";
-    command -v wget     >/dev/null 2>&1 || set -- wget "$@";
-    command -v zsh      >/dev/null 2>&1 || set -- zsh "$@";
-    command -v neofetch >/dev/null 2>&1 || set -- neofetch "$@";
-    command -v tr       >/dev/null 2>&1 || set -- coreutils "$@";
-    command -v ps       >/dev/null 2>&1 || set -- procps "$@";
-    command -v sed      >/dev/null 2>&1 || set -- sed "$@";
-    command -v gpg      >/dev/null 2>&1 || set -- gpg "$@";
+    command -v git       >/dev/null 2>&1 || set -- git "$@";
+    command -v wget      >/dev/null 2>&1 || set -- wget "$@";
+    command -v zsh       >/dev/null 2>&1 || set -- zsh "$@";
+    command -v fastfetch >/dev/null 2>&1 || set -- fastfetch "$@";
+    command -v tr        >/dev/null 2>&1 || set -- coreutils "$@";
+    command -v ps        >/dev/null 2>&1 || set -- procps "$@";
+    command -v sed       >/dev/null 2>&1 || set -- sed "$@";
+    command -v gpg       >/dev/null 2>&1 || set -- gpg "$@";
 
     if [ $# -ne 0 ]; then
         do_install "$@"

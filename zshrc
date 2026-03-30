@@ -162,7 +162,7 @@ git() {
 alias ip="ip -c"
 alias temp="paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/'"
 
-neofetch --cpu_temp on
+fastfetch --cpu-temp on
 
 if [ -f /var/run/reboot-required ]; then
     printf "\n\033[91mREBOOT REQUIRED FOR:\033[0m\n"
